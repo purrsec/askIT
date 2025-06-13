@@ -1,0 +1,28 @@
+[tool.poetry]
+name = "askit-cli"
+version = "0.1.0"
+description = "AskIT-CLI is a command-line assistant that uses AI to provide suggestions for shell commands."
+authors = ["Your Name <you@example.com>"]
+readme = "README.md"
+packages = [{include = "askit", from = "src"}]
+
+[tool.poetry.dependencies]
+python = "^3.12"
+typer = "^0.12.3"
+rich = "^13.7.1"
+pyyaml = "^6.0.1"
+anthropic = "^0.25.0"
+keyring = "^25.2.1"
+inquirer = "^3.2.3"
+watchdog = "^4.0.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.2.0"
+ipython = "^8.24.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.scripts]
+askit-cli = "askit.cli:main" 
