@@ -58,7 +58,7 @@ jobs:
         run: poetry install
         shell: bash
       - name: Build with PyInstaller
-        run: poetry run pyinstaller run_cli.py --paths src --name askit-cli --dir --clean --exclude-module tkinter --exclude-module matplotlib --exclude-module numpy --exclude-module scipy --exclude-module PIL --exclude-module IPython
+        run: poetry run pyinstaller run_cli.py --paths src --name askit-cli --onedir --clean --exclude-module tkinter --exclude-module matplotlib --exclude-module numpy --exclude-module scipy --exclude-module PIL --exclude-module IPython
         shell: bash
       - name: Post-build smoke test
         run: .\dist\askit-cli\askit-cli.exe config --help
@@ -99,7 +99,7 @@ jobs:
 
       - name: Build Linux binary
         run: |
-          poetry run pyinstaller run_cli.py --paths src --name askit-cli --dir --clean --exclude-module tkinter --exclude-module matplotlib --exclude-module numpy --exclude-module scipy --exclude-module PIL --exclude-module IPython
+          poetry run pyinstaller run_cli.py --paths src --name askit-cli --onedir --clean --exclude-module tkinter --exclude-module matplotlib --exclude-module numpy --exclude-module scipy --exclude-module PIL --exclude-module IPython
           VERSION=${{ github.ref_name }}
           DEBIAN_VERSION=${VERSION#v}
           mkdir -p staging/DEBIAN
@@ -156,7 +156,7 @@ jobs:
       - name: Build macOS package
         run: |
           # Build binary for Apple Silicon with optimizations
-          poetry run pyinstaller run_cli.py --paths src --name askit-cli --dir --clean --target-arch arm64 --exclude-module tkinter --exclude-module matplotlib --exclude-module numpy --exclude-module scipy --exclude-module PIL --exclude-module IPython
+          poetry run pyinstaller run_cli.py --paths src --name askit-cli --onedir --clean --target-arch arm64 --exclude-module tkinter --exclude-module matplotlib --exclude-module numpy --exclude-module scipy --exclude-module PIL --exclude-module IPython
           
           # Create a staging directory for the PKG
           mkdir -p staging/usr/local/bin
