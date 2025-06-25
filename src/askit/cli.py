@@ -475,6 +475,21 @@ def _check_and_install_completion():
             _install_completion_for_shell(shell)
 
 
+def version_callback(value: bool):
+    """
+    Callback to show version and exit.
+    """
+    if value:
+        import importlib.metadata
+        try:
+            version = importlib.metadata.version("askit-cli")
+        except importlib.metadata.PackageNotFoundError:
+            version = "0.0.0 (local development)" # Fallback for local dev
+        console = Console()
+        console.print(f"askit-cli version: [bold green]{version}[/bold green]")
+        raise typer.Exit()
+
+
 @app.callback(invoke_without_command=True)
 def cli_main(
     ctx: typer.Context,
@@ -490,6 +505,10 @@ def cli_main(
         bool,
         typer.Option("--safe", help="Activates 'Safe Mode'.")
     ] = False,
+    version: Annotated[
+        Optional[bool],
+        typer.Option("--version", callback=version_callback, is_eager=True, help="Show version and exit.")
+    ] = None,
 ):
     """
     AskIT-CLI: Your intelligent command-line assistant.
