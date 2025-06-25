@@ -238,78 +238,57 @@ def ask_ai(prompt: str, context_lines: int = 10, safe_mode: bool = False):
             console.print("[dim]ℹ️  Normal mode: Copy and execute commands manually[/dim]")
 
 
-def parse_custom_args():
-    """
-    Custom argument parser that treats everything after -p as the prompt.
-    Returns (is_ask_command, modified_args)
-    """
-    args = sys.argv[1:]  # Skip program name
-    
-    if not args:
-        return False, args  # No arguments provided, let Typer handle
-    
-    # Check if this is an ask command (has -p or --prompt)
-    prompt_index = -1
-    for i, arg in enumerate(args):
-        if arg in ['-p', '--prompt']:
-            prompt_index = i
-            break
-    
-    if prompt_index == -1:
-        return False, args  # No -p found, let Typer handle normally
-    
-    # We have a -p, this is an ask command
-    # Reconstruct args: everything before -p, then -p, then everything after joined as one
-    before_p = args[:prompt_index]
-    after_p = args[prompt_index + 1:]
-    
-    if not after_p:
-        # No prompt after -p, let Typer handle the error
-        return False, args
-    
-    # Join everything after -p as one quoted argument
-    # This ensures that spaces in the prompt are preserved
-    joined_prompt = ' '.join(after_p)
-    
-    # Create modified args with the joined prompt
-    modified_args = before_p + ['-p', joined_prompt]
-    
-    return True, modified_args
+def parse_and_join_prompt(args: list[str]) -> tuple[list[str], str | None]:
+    """Finds -p or --prompt and joins the following words. Returns the remaining args and the prompt."""
+    try:
+        if "-p" in args:
+            p_index = args.index("-p")
+        elif "--prompt" in args:
+            p_index = args.index("--prompt")
+        else:
+            return args, None
+    except ValueError:
+        return args, None
+
+    prompt_words = args[p_index + 1:]
+    if not prompt_words:
+        # Let Typer handle the error of missing prompt value
+        return args, None
+        
+    prompt = " ".join(prompt_words)
+    remaining_args = args[:p_index]
+    return remaining_args, prompt
 
 
 def main():
     """
-    Main entry point that handles the no-arguments case gracefully.
+    Main entry point that handles custom argument parsing before Typer.
+    This allows calling the 'ask' command implicitly.
+    e.g., `askit-cli -p my question` instead of `askit-cli ask -p "my question"`
     """
     args = sys.argv[1:]
     known_commands = {"init", "config", "info", "ask"}
 
-    # If no arguments are provided, or if the user requests help on the root command, show the custom help.
-    if not args or args == ["--help"]:
-        show_help()
+    # If no args, or the first arg is a known command or a help flag, let Typer handle it.
+    if not args or args[0] in known_commands or args[0].startswith('--'):
+        app()
         return
 
-    # If the first argument is not a known command and not an option,
-    # assume the user wants to 'ask'. We prepend 'ask' to the arguments.
-    # The `parse_custom_args` function will then handle wrapping the prompt with `-p`.
-    if args[0] not in known_commands and not args[0].startswith('-'):
-        sys.argv.insert(1, "ask")
+    # At this point, it's an implicit 'ask' command.
+    remaining_args, prompt = parse_and_join_prompt(args)
 
-    # Now, let Typer handle the (potentially modified) arguments.
-    # The custom parser will ensure prompts are correctly handled for the 'ask' command.
-    is_ask_command, modified_args = parse_custom_args()
-    
-    if is_ask_command:
-        # Temporarily replace sys.argv for Typer
-        original_argv = sys.argv[:]
-        sys.argv = [sys.argv[0]] + modified_args
-        try:
-            app()
-        finally:
-            sys.argv = original_argv
+    if prompt is not None:
+        # Command was `askit-cli [options] -p prompt...`
+        # We rebuild argv to be `askit-cli [options] ask -p "prompt"`
+        final_args = remaining_args + ["ask", "-p", prompt]
     else:
-        # Let Typer handle other commands like 'init', 'config', 'info'
-        app()
+        # Command was `askit-cli prompt...` (no -p)
+        # We rebuild argv to be `askit-cli ask -p "prompt"`
+        prompt = " ".join(args)
+        final_args = ["ask", "-p", prompt]
+        
+    sys.argv = [sys.argv[0]] + final_args
+    app()
 
 
 app = typer.Typer(
