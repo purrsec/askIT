@@ -24,7 +24,7 @@ jobs:
           generate_release_notes: true
 
   build-windows:
-    name: Build for Windows (.exe)
+    name: Build for Windows (x86_64)
     needs: create-release
     runs-on: windows-latest
     permissions:
@@ -43,14 +43,21 @@ jobs:
       - name: Build with PyInstaller
         run: poetry run pyinstaller src/askit/cli.py --name askit-cli --onefile --clean
         shell: bash
+      - name: Rename asset
+        run: Rename-Item -Path dist/askit-cli.exe -NewName "askit-cli-${{ github.ref_name }}-windows-x86_64.exe"
+        shell: pwsh
       - name: Upload Release Asset
-        uses: softprops/action-gh-release@v2
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          files: dist/askit-cli.exe
-          name: askit-cli-windows.exe
+          upload_url: ${{ needs.create-release.outputs.upload_url }}
+          asset_path: dist/askit-cli-${{ github.ref_name }}-windows-x86_64.exe
+          asset_name: askit-cli-${{ github.ref_name }}-windows-x86_64.exe
+          asset_content_type: application/vnd.microsoft.portable-executable
 
   build-linux:
-    name: Build for Linux (.deb)
+    name: Build for Linux (amd64)
     needs: create-release
     runs-on: ubuntu-latest
     permissions:
@@ -69,27 +76,32 @@ jobs:
       - name: Build and package .deb
         run: |
           poetry run pyinstaller src/askit/cli.py --name askit-cli --onefile --clean
-          VERSION=$(echo "${{ github.ref }}" | sed 's/refs\/tags\/v//')
+          VERSION=${{ github.ref_name }}
+          DEBIAN_VERSION=${VERSION#v}
           mkdir -p staging/DEBIAN
           mkdir -p staging/usr/local/bin
           cp dist/askit-cli staging/usr/local/bin/
           cat <<EOF > staging/DEBIAN/control
           Package: askit-cli
-          Version: $VERSION
+          Version: $DEBIAN_VERSION
           Architecture: amd64
           Maintainer: Your Name <you@example.com>
           Description: A command-line assistant that uses AI to provide suggestions for shell commands.
           EOF
-          dpkg-deb --build staging askit-cli-linux.deb
+          dpkg-deb --build staging askit-cli-${VERSION}-linux-amd64.deb
         shell: bash
       - name: Upload Release Asset
-        uses: softprops/action-gh-release@v2
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          files: askit-cli-linux.deb
-          name: askit-cli-linux.deb
+          upload_url: ${{ needs.create-release.outputs.upload_url }}
+          asset_path: askit-cli-${{ github.ref_name }}-linux-amd64.deb
+          asset_name: askit-cli-${{ github.ref_name }}-linux-amd64.deb
+          asset_content_type: application/vnd.debian.binary-package
 
   build-macos:
-    name: Build for macOS (Apple Silicon)
+    name: Build for macOS (arm64)
     needs: create-release
     runs-on: macos-latest
     permissions:
@@ -115,11 +127,15 @@ jobs:
             --volname "AskIT CLI (Apple Silicon)" \
             --window-size 600 300 \
             --icon-size 96 \
-            "askit-cli-macos-m-series.dmg" \
+            "askit-cli-${{ github.ref_name }}-macos-arm64.dmg" \
             "dist/"
         shell: bash
       - name: Upload Release Asset
-        uses: softprops/action-gh-release@v2
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          files: askit-cli-macos-m-series.dmg
-          name: askit-cli-macos-m-series.dmg 
+          upload_url: ${{ needs.create-release.outputs.upload_url }}
+          asset_path: askit-cli-${{ github.ref_name }}-macos-arm64.dmg
+          asset_name: askit-cli-${{ github.ref_name }}-macos-arm64.dmg
+          asset_content_type: application/octet-stream 
