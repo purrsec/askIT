@@ -68,7 +68,7 @@ jobs:
         uses: snok/install-poetry@v1
 
       - name: Install dependencies
-        run: poetry install --no-root --no-dev
+        run: poetry install --without dev
 
       - name: Build with PyInstaller
         run: poetry run pyinstaller src/askit/cli.py --name askit-cli --onefile --clean
