@@ -8,6 +8,7 @@ from typing import Optional
 from rich.prompt import Prompt
 from .agent.runtime import run_agent
 
+from ._version import __version__
 from .commands.init_cmd import init_project
 from .commands.config_cmd import config_shell
 from .core import project
@@ -485,13 +486,8 @@ def version_callback(value: bool):
     Callback to show version and exit.
     """
     if value:
-        import importlib.metadata
-        try:
-            version = importlib.metadata.version("askit-cli")
-        except importlib.metadata.PackageNotFoundError:
-            version = "0.0.0 (local development)" # Fallback for local dev
         console = Console()
-        console.print(f"askit-cli version: [bold green]{version}[/bold green]")
+        console.print(f"askit-cli version: [bold green]{__version__}[/bold green]")
         raise typer.Exit()
 
 

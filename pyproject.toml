@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "askit-cli"
-version = "0.1.0"
-description = "AskIT-CLI is a command-line assistant that uses AI to provide suggestions for shell commands."
+version = {from = "src/askit/_version.py", attr = "__version__"}
+description = "An intelligent command-line assistant powered by AI."
 authors = ["Your Name <you@example.com>"]
 readme = "README.md"
 packages = [{include = "askit", from = "src"}]
