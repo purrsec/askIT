@@ -104,7 +104,8 @@ jobs:
           DEBIAN_VERSION=${VERSION#v}
           mkdir -p staging/DEBIAN
           mkdir -p staging/usr/local/bin
-          cp -r dist/askit-cli staging/usr/local/bin/
+          mkdir -p staging/usr/local/lib
+          cp -r dist/askit-cli staging/usr/local/lib/
           cat <<EOF > staging/DEBIAN/control
           Package: askit-cli
           Version: $DEBIAN_VERSION
@@ -112,14 +113,12 @@ jobs:
           Maintainer: Your Name <you@example.com>
           Description: A command-line assistant that uses AI to provide suggestions for shell commands.
           EOF
-          # Create a wrapper script
-          cat <<EOF > staging/usr/local/bin/askit-cli-wrapper
+          # Create a wrapper script that calls the actual binary
+          cat <<EOF > staging/usr/local/bin/askit-cli
           #!/bin/bash
-          exec /usr/local/bin/askit-cli/askit-cli "\$@"
+          exec /usr/local/lib/askit-cli/askit-cli "\$@"
           EOF
-          chmod +x staging/usr/local/bin/askit-cli-wrapper
-          # Create symlink for easier access
-          ln -sf askit-cli-wrapper staging/usr/local/bin/askit-cli
+          chmod +x staging/usr/local/bin/askit-cli
           dpkg-deb --build staging askit-cli-${VERSION}-linux-amd64.deb
         shell: bash
       - name: Post-build smoke test
@@ -160,17 +159,15 @@ jobs:
           
           # Create a staging directory for the PKG
           mkdir -p staging/usr/local/bin
-          cp -r dist/askit-cli staging/usr/local/bin/
+          mkdir -p staging/usr/local/lib
+          cp -r dist/askit-cli staging/usr/local/lib/
           
-          # Create a wrapper script
-          cat <<EOF > staging/usr/local/bin/askit-cli-wrapper
+          # Create a wrapper script that calls the actual binary
+          cat <<EOF > staging/usr/local/bin/askit-cli
           #!/bin/bash
-          exec /usr/local/bin/askit-cli/askit-cli "\$@"
+          exec /usr/local/lib/askit-cli/askit-cli "\$@"
           EOF
-          chmod +x staging/usr/local/bin/askit-cli-wrapper
-          
-          # Create symlink for easier access
-          ln -sf askit-cli-wrapper staging/usr/local/bin/askit-cli
+          chmod +x staging/usr/local/bin/askit-cli
 
           # Set version variables
           VERSION=${{ github.ref_name }}
