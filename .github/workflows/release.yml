@@ -41,7 +41,7 @@ jobs:
         run: poetry install
         shell: bash
       - name: Build with PyInstaller
-        run: poetry run pyinstaller src/askit/cli.py --name askit-cli --onefile --clean
+        run: poetry run pyinstaller src/askit/cli.py --paths src --name askit-cli --onefile --clean
         shell: bash
       - name: Rename and prepare artifact
         run: |
@@ -73,7 +73,7 @@ jobs:
         shell: bash
       - name: Build and package .deb
         run: |
-          poetry run pyinstaller src/askit/cli.py --name askit-cli --onefile --clean
+          poetry run pyinstaller src/askit/cli.py --paths src --name askit-cli --onefile --clean
           VERSION=${{ github.ref_name }}
           DEBIAN_VERSION=${VERSION#v}
           mkdir -p staging/DEBIAN
@@ -113,7 +113,7 @@ jobs:
       - name: Build and package .pkg
         run: |
           # Build binary for Apple Silicon
-          poetry run pyinstaller src/askit/cli.py --name askit-cli --onefile --clean --target-arch arm64
+          poetry run pyinstaller src/askit/cli.py --paths src --name askit-cli --onefile --clean --target-arch arm64
           
           # Create a staging directory for the PKG
           mkdir -p staging/usr/local/bin
