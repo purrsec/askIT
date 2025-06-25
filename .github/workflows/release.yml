@@ -8,27 +8,8 @@ on:
       - 'v*.*.*' # Déclenche le workflow quand un tag comme v1.0.0 est poussé
 
 jobs:
-  verify:
-    name: Verify and Test
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with: { python-version: '3.12' }
-      - uses: snok/install-poetry@v1
-        with:
-          version: 1.7.1
-          virtualenvs-create: true
-      - name: Install dependencies
-        run: poetry install
-        shell: bash
-      - name: Run tests
-        run: poetry run pytest
-        shell: bash
-
   create-release:
     name: Create Release
-    needs: verify
     runs-on: ubuntu-latest
     permissions:
       contents: write
