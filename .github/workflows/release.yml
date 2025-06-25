@@ -101,7 +101,7 @@ jobs:
           asset_content_type: application/vnd.debian.binary-package
 
   build-macos:
-    name: Build for macOS (arm64)
+    name: Build for macOS (pkg)
     needs: create-release
     runs-on: macos-latest
     permissions:
@@ -117,18 +117,25 @@ jobs:
       - name: Install dependencies
         run: poetry install
         shell: bash
-      - name: Build for Apple Silicon
+      - name: Build and package .pkg
         run: |
-          # Build for Apple Silicon (M1/M2/M3)
+          # Build binary for Apple Silicon
           poetry run pyinstaller src/askit/cli.py --name askit-cli --onefile --clean --target-arch arm64
-          # Create DMG
-          brew install create-dmg
-          create-dmg \
-            --volname "AskIT CLI (Apple Silicon)" \
-            --window-size 600 300 \
-            --icon-size 96 \
-            "askit-cli-${{ github.ref_name }}-macos-arm64.dmg" \
-            "dist/"
+          
+          # Create a staging directory for the PKG
+          mkdir -p staging/usr/local/bin
+          cp dist/askit-cli staging/usr/local/bin/
+
+          # Set version variables
+          VERSION=${{ github.ref_name }}
+          PKG_VERSION=${VERSION#v}
+
+          # Create the .pkg installer
+          pkgbuild --root staging \
+                   --install-location "/" \
+                   --identifier "io.github.askit-ai.askit-cli" \
+                   --version "$PKG_VERSION" \
+                   "askit-cli-${VERSION}-macos-arm64.pkg"
         shell: bash
       - name: Upload Release Asset
         uses: actions/upload-release-asset@v1
@@ -136,6 +143,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ needs.create-release.outputs.upload_url }}
-          asset_path: askit-cli-${{ github.ref_name }}-macos-arm64.dmg
-          asset_name: askit-cli-${{ github.ref_name }}-macos-arm64.dmg
-          asset_content_type: application/octet-stream 
+          asset_path: askit-cli-${{ github.ref_name }}-macos-arm64.pkg
+          asset_name: askit-cli-${{ github.ref_name }}-macos-arm64.pkg
+          asset_content_type: application/x-newton-compatible-pkg 
