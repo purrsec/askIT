@@ -11,11 +11,15 @@ def test_main_no_args_shows_help(capsys):
     Test that running with no arguments shows the help message, not an error.
     """
     with patch.object(sys, 'argv', ['askit-cli']):
-        cli.main() # Test the actual entrypoint
+        with pytest.raises(SystemExit) as e:
+            cli.main()
+        # Check that it exits cleanly with code 0 (success)
+        assert e.value.code == 0
 
     captured = capsys.readouterr()
     assert "Usage:" in captured.out
-    assert "Error:" not in captured.err
+    assert "Missing command" not in captured.err.lower()
+    assert "error" not in captured.err.lower()
 
 
 def test_main_version_flag(capsys):
