@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "askit-cli"
-version = {from = "src/askit/_version.py", attr = "__version__"}
+version = "0.1.0"
 description = "An intelligent command-line assistant powered by AI."
 authors = ["Your Name <you@example.com>"]
 readme = "README.md"
