@@ -58,16 +58,15 @@ jobs:
         run: poetry install
         shell: bash
       - name: Build with PyInstaller
-        run: poetry run pyinstaller run_cli.py --paths src --name askit-cli --onefile --clean --exclude-module tkinter --exclude-module matplotlib --exclude-module numpy --exclude-module scipy --exclude-module PIL --exclude-module IPython
+        run: poetry run pyinstaller run_cli.py --paths src --name askit-cli --dir --clean --exclude-module tkinter --exclude-module matplotlib --exclude-module numpy --exclude-module scipy --exclude-module PIL --exclude-module IPython
         shell: bash
       - name: Post-build smoke test
-        run: .\dist\askit-cli.exe config --help
+        run: .\dist\askit-cli\askit-cli.exe config --help
         shell: pwsh
       - name: Prepare artifact
         run: |
           mkdir -p artifact
-          Rename-Item -Path dist/askit-cli.exe -NewName "askit-cli-${{ github.ref_name }}-windows-x86_64.exe"
-          Move-Item -Path dist/askit-cli-${{ github.ref_name }}-windows-x86_64.exe -Destination artifact/
+          Compress-Archive -Path dist/askit-cli -DestinationPath "artifact/askit-cli-${{ github.ref_name }}-windows-x86_64.zip"
         shell: pwsh
       - uses: actions/upload-artifact@v4
         with:
@@ -100,12 +99,12 @@ jobs:
 
       - name: Build Linux binary
         run: |
-          poetry run pyinstaller run_cli.py --paths src --name askit-cli --onefile --clean --exclude-module tkinter --exclude-module matplotlib --exclude-module numpy --exclude-module scipy --exclude-module PIL --exclude-module IPython
+          poetry run pyinstaller run_cli.py --paths src --name askit-cli --dir --clean --exclude-module tkinter --exclude-module matplotlib --exclude-module numpy --exclude-module scipy --exclude-module PIL --exclude-module IPython
           VERSION=${{ github.ref_name }}
           DEBIAN_VERSION=${VERSION#v}
           mkdir -p staging/DEBIAN
           mkdir -p staging/usr/local/bin
-          cp dist/askit-cli staging/usr/local/bin/
+          cp -r dist/askit-cli staging/usr/local/bin/
           cat <<EOF > staging/DEBIAN/control
           Package: askit-cli
           Version: $DEBIAN_VERSION
@@ -113,10 +112,18 @@ jobs:
           Maintainer: Your Name <you@example.com>
           Description: A command-line assistant that uses AI to provide suggestions for shell commands.
           EOF
+          # Create a wrapper script
+          cat <<EOF > staging/usr/local/bin/askit-cli-wrapper
+          #!/bin/bash
+          exec /usr/local/bin/askit-cli/askit-cli "\$@"
+          EOF
+          chmod +x staging/usr/local/bin/askit-cli-wrapper
+          # Create symlink for easier access
+          ln -sf askit-cli-wrapper staging/usr/local/bin/askit-cli
           dpkg-deb --build staging askit-cli-${VERSION}-linux-amd64.deb
         shell: bash
       - name: Post-build smoke test
-        run: ./dist/askit-cli config --help
+        run: ./dist/askit-cli/askit-cli config --help
         shell: bash
       - uses: actions/upload-artifact@v4
         with:
@@ -149,11 +156,21 @@ jobs:
       - name: Build macOS package
         run: |
           # Build binary for Apple Silicon with optimizations
-          poetry run pyinstaller run_cli.py --paths src --name askit-cli --onefile --clean --target-arch arm64 --exclude-module tkinter --exclude-module matplotlib --exclude-module numpy --exclude-module scipy --exclude-module PIL --exclude-module IPython
+          poetry run pyinstaller run_cli.py --paths src --name askit-cli --dir --clean --target-arch arm64 --exclude-module tkinter --exclude-module matplotlib --exclude-module numpy --exclude-module scipy --exclude-module PIL --exclude-module IPython
           
           # Create a staging directory for the PKG
           mkdir -p staging/usr/local/bin
-          cp dist/askit-cli staging/usr/local/bin/
+          cp -r dist/askit-cli staging/usr/local/bin/
+          
+          # Create a wrapper script
+          cat <<EOF > staging/usr/local/bin/askit-cli-wrapper
+          #!/bin/bash
+          exec /usr/local/bin/askit-cli/askit-cli "\$@"
+          EOF
+          chmod +x staging/usr/local/bin/askit-cli-wrapper
+          
+          # Create symlink for easier access
+          ln -sf askit-cli-wrapper staging/usr/local/bin/askit-cli
 
           # Set version variables
           VERSION=${{ github.ref_name }}
@@ -167,7 +184,7 @@ jobs:
                    "askit-cli-${VERSION}-macos-arm64.pkg"
         shell: bash
       - name: Post-build smoke test
-        run: ./dist/askit-cli config --help
+        run: ./dist/askit-cli/askit-cli config --help
         shell: bash
       - uses: actions/upload-artifact@v4
         with:
