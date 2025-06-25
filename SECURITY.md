@@ -14,7 +14,7 @@ currently being supported with security updates.
 
 We take all security bugs in AskIT-CLI seriously. Thank you for improving the security of our project. We appreciate your efforts and responsible disclosure and will make every effort to acknowledge your contributions.
 
-To report a security vulnerability, please email me with a detailed description of the vulnerability.
+To report a security vulnerability, please email git.lpl@protonmail.com with a detailed description of the vulnerability.
 
 You should receive a response within 48 hours. If for some reason you do not, please follow up via email to ensure we received your original message.
 

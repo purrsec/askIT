@@ -2,7 +2,7 @@
 name = "askit-cli"
 version = "0.1.0"
 description = "An intelligent command-line assistant powered by AI."
-authors = ["Your Name <you@example.com>"]
+authors = ["git.lpl <git.lpl@protonmail.com>"]
 readme = "README.md"
 packages = [{include = "askit", from = "src"}]
 

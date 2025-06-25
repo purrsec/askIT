@@ -110,7 +110,7 @@ jobs:
           Package: askit-cli
           Version: $DEBIAN_VERSION
           Architecture: amd64
-          Maintainer: Your Name <you@example.com>
+          Maintainer: git.lpl <git.lpl@protonmail.com>
           Description: A command-line assistant that uses AI to provide suggestions for shell commands.
           EOF
           # Create a wrapper script that calls the actual binary
