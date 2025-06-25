@@ -5,22 +5,21 @@ from askit.cli import app
 
 runner = CliRunner()
 
-def test_app_runs():
+def test_app_runs_and_shows_help():
     """
-    Test that the CLI runs without crashing when called with no command.
+    Test that the CLI runs, shows help, and exits with a non-zero code
+    when called with no command, as Typer requires a subcommand.
     """
     result = runner.invoke(app)
-    assert result.exit_code == 0
-    # A basic Typer app with no command returns a help message.
-    # We can check for a known part of that help message.
+    assert result.exit_code != 0  # It should exit with an error code
     assert "Usage" in result.stdout
-    assert "Options" in result.stdout
+    assert "Missing command" in result.stdout
 
-def test_version_callback(mocker):
+def test_version_callback():
     """
     Test that --version flag works correctly.
+    Typer's version callback exits the program, so we expect an exit code of 0.
     """
-    # Typer's version callback exits the program, so we expect an exit code of 0.
     result = runner.invoke(app, ["--version"])
     assert result.exit_code == 0
     # We can't easily get the version from pyproject.toml here,
