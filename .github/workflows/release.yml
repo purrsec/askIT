@@ -171,10 +171,26 @@ jobs:
         with:
           path: artifacts
       
-      - name: List files
-        run: find artifacts -type f
+      - name: Check for downloaded files
+        id: check_files
+        run: |
+          if [ -d "artifacts" ] && [ -n "$(find artifacts -type f)" ]; then
+            echo "files_found=true" >> $GITHUB_OUTPUT
+            echo "Found files:"
+            find artifacts -type f
+          else
+            echo "files_found=false" >> $GITHUB_OUTPUT
+            echo "No build artifacts found to release."
+          fi
 
-      - name: Create Release and Upload Assets
+      - name: Delete existing release (if files found)
+        if: steps.check_files.outputs.files_found == 'true'
+        run: gh release delete ${{ github.ref_name }} --yes || echo "No existing release to delete."
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create Release and Upload Assets (if files found)
+        if: steps.check_files.outputs.files_found == 'true'
         uses: softprops/action-gh-release@v2
         with:
           files: artifacts/**/*
