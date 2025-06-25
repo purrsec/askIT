@@ -268,4 +268,9 @@ Iterative mode for automatic problem correction, where each command is tested an
 
 ---
 
-Feel free to contribute or report issues! 
+## 🤝 Contributing & Security
+
+We welcome contributions from the community!
+
+-   For guidelines on how to contribute, please see our [**Contributing Guide**](./CONTRIBUTING.md).
+-   To learn about our security policies and how to report a vulnerability, please see our [**Security Policy**](./SECURITY.md). 

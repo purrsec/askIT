@@ -1,0 +1,129 @@
+commit 75608cd0711df9a7701b2cb72967024116be995a
+Author: UserCr4ig <87878066+UserCr4ig@users.noreply.github.com>
+Date:   Wed Jun 25 18:28:37 2025 +0200
+
+    Enhance README and ask_ai function for improved user interaction
+    
+    - Updated README.md to include a new section on contributing and security policies, providing clear guidelines for community involvement.
+    - Refactored the ask_ai function to implement an interaction loop that allows users to provide additional information when confidence is low, enhancing the overall user experience.
+    - Added OS information to the context for better command suggestions and improved error handling for user prompts.
+
+commit c2d9aeba719bcab0d08d4091bc2730f75346da81
+Author: UserCr4ig <87878066+UserCr4ig@users.noreply.github.com>
+Date:   Sun Jun 22 22:24:30 2025 +0200
+
+    Remove obsolete files and clean up project structure
+    
+    - Deleted .gitignore, file_structure.md, poetry.lock, prompt.md, pyproject.toml, README.md, run.ps1, tech_stack.md, and various source files to streamline the project.
+    - This cleanup prepares the repository for a fresh start, ensuring no unnecessary artifacts remain.
+
+commit 4892af4900b1a8c8965149123621650f5c3b04b9
+Author: UserCr4ig <87878066+UserCr4ig@users.noreply.github.com>
+Date:   Sun Jun 22 22:24:03 2025 +0200
+
+    PUSH
+
+commit 781346d1465dd6c92cb5a4318506ed0c8eaf7e9e
+Author: UserCr4ig <87878066+UserCr4ig@users.noreply.github.com>
+Date:   Sun Jun 22 22:23:09 2025 +0200
+
+    Enhance AskIT-CLI with agent task handling and improved shell history filtering
+    
+    - Added support for 'AGENT' and 'NONE' confidence levels in the ask_ai function, allowing for more complex task management and user interaction.
+    - Implemented user prompts for agent tasks, enabling confirmation before execution.
+    - Enhanced shell history retrieval by filtering out 'askit-cli' commands, improving the relevance of displayed history.
+    - Updated confidence validation in ClaudeProvider to include new levels, ensuring consistent command generation.
+
+commit 84913c128c80bac8e656d7eb7367104d16f9f065
+Author: UserCr4ig <87878066+UserCr4ig@users.noreply.github.com>
+Date:   Sun Jun 22 21:37:49 2025 +0200
+
+    Refactor API key handling in AskIT-CLI configuration shell
+    
+    - Removed unnecessary imports to streamline the code.
+    - Enhanced the API key input process by ensuring the terminal state is fully reset after password input.
+    - Improved user feedback by maintaining the prompt session's state for a better experience.
+
+commit 2d6a264811e75b00eabbc0739c6b3daf15806ba6
+Author: UserCr4ig <87878066+UserCr4ig@users.noreply.github.com>
+Date:   Sun Jun 22 21:34:17 2025 +0200
+
+    Enhance AskIT-CLI configuration shell with improved prompt styling and argument handling
+    
+    - Updated the prompt session to use custom styles for better visual feedback.
+    - Implemented FormattedText for dynamic prompts to handle ANSI formatting correctly.
+    - Added functionality to clear the screen and re-display the header after API key input.
+    - Preserved spaces in the prompt argument parsing for improved user experience.
+
+commit 8469d0b03b7b55bcfd55693e120e0f829bdefb80
+Merge: 5c35707 389cbb5
+Author: UserCr4ig <87878066+UserCr4ig@users.noreply.github.com>
+Date:   Sun Jun 22 15:41:03 2025 +0200
+
+    Merge branch 'main' of https://github.com/UserCr4ig/askIT into main
+
+commit 5c35707afc0dd3b2faaae73d22132e5347b9adbd
+Author: UserCr4ig <87878066+UserCr4ig@users.noreply.github.com>
+Date:   Sun Jun 22 15:40:36 2025 +0200
+
+    Update dependencies in poetry.lock and pyproject.toml
+    
+    - Replaced "backports-tarfile" with "annotated-types" version 0.7.0.
+    - Added new packages: "ansicon" version 1.89.0, "anthropic" version 0.25.9, "anyio" version 4.9.0, "asttokens" version 3.0.0, "blessed" version 1.21.0, "decorator" version 5.2.1, "distro" version 1.9.0, "editor" version 1.6.6, "executing" version 2.2.0, "filelock" version 3.18.0, "fsspec" version 2025.5.1, "h11" version 0.16.0, "hf-xet" version 1.1.3, "httpcore" version 1.0.9, "httpx" version 0.28.1, "huggingface-hub" version 0.33.0, "pytest" version 8.4.0, "readchar" version 4.2.1, "runs" version 1.2.2, "sniffio" version 1.3.1, "stack-data" version 0.6.3, "tokenizers" version 0.21.1, "tqdm" version 4.67.1, "traitlets" version 5.14.3, "typing-inspection" version 0.4.1, "watchdog" version 4.0.2, and "wcwidth" version 0.2.13.
+    - Updated "python-dotenv" dependency to version 1.1.0 in pyproject.toml.
+    - Adjusted Python version compatibility in poetry.lock to "^3.12".
+
+commit 389cbb56a4217bacb41ab7a54153645fe89f0955
+Author: UserCr4ig <87878066+UserCr4ig@users.noreply.github.com>
+Date:   Sun Jun 15 23:22:22 2025 +0200
+
+    Remove test_config.py and enhance ClaudeProvider for improved command suggestion handling
+    
+    - Deleted the test_config.py file as it was no longer needed.
+    - Updated ClaudeProvider to return a tuple containing confidence level, command, and explanation from the get_suggestion method.
+    - Improved error handling and response parsing in ClaudeProvider for better user feedback.
+    - Added a structured system message for the Claude API to ensure consistent command generation.
+
+commit e35ecbe54481d6b8f6ca2dd7fcd376ba5068946f
+Author: UserCr4ig <87878066+UserCr4ig@users.noreply.github.com>
+Date:   Sun Jun 15 23:05:50 2025 +0200
+
+    Add custom argument parsing for AskIT-CLI prompt handling
+    
+    - Implemented a new function to parse command-line arguments, specifically for the '-p' or '--prompt' option.
+    - Enhanced the main function to handle special parsing for ask commands, allowing for a more flexible user input experience.
+    - Ensured that the original argument list is restored after processing to maintain Typer's functionality.
+
+commit 8a6154f69b2103ae56d88dd797ba95a82d45af9f
+Author: UserCr4ig <87878066+UserCr4ig@users.noreply.github.com>
+Date:   Sun Jun 15 23:01:17 2025 +0200
+
+    Implement autocompletion and help commands in AskIT-CLI configuration shell
+    
+    - Added autocompletion for configuration commands using NestedCompleter.
+    - Introduced a help command to display available commands and usage instructions.
+    - Enhanced user feedback for command execution, including staging and committing changes.
+    - Improved error handling and user prompts for missing parameters and invalid commands.
+
+commit 18712794b9fd58c7583479651bf17927116db543
+Author: UserCr4ig <87878066+UserCr4ig@users.noreply.github.com>
+Date:   Sun Jun 15 22:50:15 2025 +0200
+
+    Enhance AskIT-CLI with new 'info' command and autocompletion support
+    
+    - Added 'info' command to display configuration paths and status.
+    - Updated help text to include the new command.
+    - Improved configuration handling by ensuring directories exist and migrating old configurations if needed.
+    - Enabled autocompletion for supported shells and provided installation feedback.
+    - Enhanced user experience with quick start guide in the configuration shell.
+
+commit 7a79d9b370992a88112ae05743ec27615a48aaf9
+Author: UserCr4ig <87878066+UserCr4ig@users.noreply.github.com>
+Date:   Fri Jun 13 03:16:39 2025 +0200
+
+    Initial commit: AskIT-CLI clean project structure
+    
+    - Python CLI built with Poetry and Typer
+    - Comprehensive .gitignore for Python development
+    - Complete project documentation
+    - No runtime or development artifacts
