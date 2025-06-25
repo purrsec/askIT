@@ -28,28 +28,11 @@ jobs:
         run: poetry run pytest
         shell: bash
 
-  create-release:
-    name: Create Release
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    outputs:
-      upload_url: ${{ steps.create_release.outputs.upload_url }}
-    steps:
-      - uses: softprops/action-gh-release@v2
-        id: create_release
-        with:
-          draft: false
-          prerelease: false
-          generate_release_notes: true
-
   build-windows:
     name: Build for Windows (x86_64)
     needs: test
     if: startsWith(github.ref, 'refs/tags/v') # Only run on tag pushes
     runs-on: windows-latest
-    permissions:
-      contents: write
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -64,24 +47,22 @@ jobs:
       - name: Build with PyInstaller
         run: poetry run pyinstaller src/askit/cli.py --paths src --name askit-cli --onefile --clean
         shell: bash
-      - name: Rename and prepare artifact
+      - name: Prepare artifact
         run: |
+          mkdir -p artifact
           Rename-Item -Path dist/askit-cli.exe -NewName "askit-cli-${{ github.ref_name }}-windows-x86_64.exe"
-          mkdir -p ../artifacts
-          Copy-Item -Path dist/askit-cli-${{ github.ref_name }}-windows-x86_64.exe -Destination ../artifacts
+          Move-Item -Path dist/askit-cli-${{ github.ref_name }}-windows-x86_64.exe -Destination artifact/
         shell: pwsh
       - uses: actions/upload-artifact@v4
         with:
           name: windows-build
-          path: artifacts/
+          path: artifact/
 
   build-linux:
     name: Build for Linux (amd64)
     needs: test
     if: startsWith(github.ref, 'refs/tags/v') # Only run on tag pushes
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -108,7 +89,7 @@ jobs:
           Maintainer: Your Name <you@example.com>
           Description: A command-line assistant that uses AI to provide suggestions for shell commands.
           EOF
-          dpkg-deb --build staging ../askit-cli-${VERSION}-linux-amd64.deb
+          dpkg-deb --build staging askit-cli-${VERSION}-linux-amd64.deb
         shell: bash
       - uses: actions/upload-artifact@v4
         with:
@@ -120,8 +101,6 @@ jobs:
     needs: test
     if: startsWith(github.ref, 'refs/tags/v') # Only run on tag pushes
     runs-on: macos-latest
-    permissions:
-      contents: write
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -151,7 +130,7 @@ jobs:
                    --install-location "/" \
                    --identifier "io.github.askit-ai.askit-cli" \
                    --version "$PKG_VERSION" \
-                   "../askit-cli-${VERSION}-macos-arm64.pkg"
+                   "askit-cli-${VERSION}-macos-arm64.pkg"
         shell: bash
       - uses: actions/upload-artifact@v4
         with:
