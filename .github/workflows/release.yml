@@ -10,9 +10,11 @@ on:
 jobs:
   build-and-release:
     name: Build and Release
-    runs-on: ubuntu-latest # Le job principal pour créer la release tourne sur Linux
+    runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: write # Requis pour créer la Release
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }} # Rend l'URL de la release disponible pour les autres jobs
 
     steps:
       - name: Create Release
@@ -26,34 +28,25 @@ jobs:
           draft: false
           prerelease: false
 
-      - name: Store Release URL
-        run: echo "${{ steps.create_release.outputs.upload_url }}" > release_upload_url.txt
-
-      - name: Upload Release URL as Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: release-info
-          path: release_upload_url.txt
-
   build-binaries:
-    name: Build Binaries on ${{ matrix.os }}
-    needs: build-and-release # Ce job dépend du premier
+    name: Build binary for ${{ matrix.os }}
+    needs: build-and-release # Dépend du job qui crée la release
     runs-on: ${{ matrix.os }}
     permissions:
-      contents: write
+      contents: write # Requis pour téléverser les fichiers (assets)
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest] # Les 3 OS cibles
+        os: [ubuntu-latest, macos-latest, windows-latest]
         include:
           - os: ubuntu-latest
-            asset_name_suffix: '-linux'
-            asset_content_type: 'application/octet-stream'
+            asset_path: dist/askit-cli
+            asset_name: askit-cli-linux
           - os: macos-latest
-            asset_name_suffix: '-macos'
-            asset_content_type: 'application/octet-stream'
+            asset_path: dist/askit-cli
+            asset_name: askit-cli-macos
           - os: windows-latest
-            asset_name_suffix: '.exe'
-            asset_content_type: 'application/vnd.microsoft.portable-executable'
+            asset_path: dist/askit-cli.exe
+            asset_name: askit-cli-windows.exe
 
     steps:
       - name: Checkout code
@@ -68,39 +61,17 @@ jobs:
         uses: snok/install-poetry@v1
 
       - name: Install dependencies
-        run: poetry install --without dev
+        run: poetry install
 
       - name: Build with PyInstaller
         run: poetry run pyinstaller src/askit/cli.py --name askit-cli --onefile --clean
 
-      - name: Rename artifact for Windows
-        if: matrix.os == 'windows-latest'
-        run: mv dist/askit-cli.exe dist/askit-cli-windows.exe
-
-      - name: Rename artifact for macOS
-        if: matrix.os == 'macos-latest'
-        run: mv dist/askit-cli dist/askit-cli-macos
-
-      - name: Rename artifact for Linux
-        if: matrix.os == 'ubuntu-latest'
-        run: mv dist/askit-cli dist/askit-cli-linux
-      
-      - name: Download Release URL
-        uses: actions/download-artifact@v4
-        with:
-          name: release-info
-
-      - name: Read Release URL
-        id: get_upload_url
-        run: |
-          echo "::set-output name=url::$(cat release_upload_url.txt)"
-      
       - name: Upload Release Asset
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ steps.get_upload_url.outputs.url }}
-          asset_path: dist/askit-cli-${{ matrix.os }}
-          asset_name: askit-cli${{ matrix.asset_name_suffix }}
-          asset_content_type: ${{ matrix.asset_content_type }} 
+          upload_url: ${{ needs.build-and-release.outputs.upload_url }}
+          asset_path: ${{ matrix.asset_path }}
+          asset_name: ${{ matrix.asset_name }}
+          asset_content_type: application/octet-stream 
