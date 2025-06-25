@@ -277,17 +277,22 @@ def main():
     """
     Main entry point that handles the no-arguments case gracefully.
     """
-    # If no arguments provided, show help
-    if len(sys.argv) == 1:
+    args = sys.argv[1:]
+    known_commands = {"init", "config", "info", "ask"}
+
+    # If no arguments are provided, or if the user requests help on the root command, show the custom help.
+    if not args or args == ["--help"]:
         show_help()
         return
-    
-    # If only whitespace arguments, show help
-    if len(sys.argv) > 1 and all(arg.strip() == "" for arg in sys.argv[1:]):
-        show_help()
-        return
-    
-    # Check if this is an ask command and needs special parsing
+
+    # If the first argument is not a known command and not an option,
+    # assume the user wants to 'ask'. We prepend 'ask' to the arguments.
+    # The `parse_custom_args` function will then handle wrapping the prompt with `-p`.
+    if args[0] not in known_commands and not args[0].startswith('-'):
+        sys.argv.insert(1, "ask")
+
+    # Now, let Typer handle the (potentially modified) arguments.
+    # The custom parser will ensure prompts are correctly handled for the 'ask' command.
     is_ask_command, modified_args = parse_custom_args()
     
     if is_ask_command:
@@ -299,14 +304,14 @@ def main():
         finally:
             sys.argv = original_argv
     else:
-        # Let Typer handle normally
+        # Let Typer handle other commands like 'init', 'config', 'info'
         app()
 
 
 app = typer.Typer(
     name="askit-cli",
     help="AskIT-CLI: Your intelligent command-line assistant.",
-    add_completion=True,
+    add_completion=False,  # We handle completion manually
 )
 console = Console()
 
@@ -490,13 +495,12 @@ def version_callback(value: bool):
         raise typer.Exit()
 
 
-@app.callback(invoke_without_command=True)
-def cli_main(
-    ctx: typer.Context,
+@app.command(help="Ask a question to the AI (default command when no other command is used)")
+def ask(
     prompt: Annotated[
-        Optional[str],
+        str,
         typer.Option("--prompt", "-p", help="The user prompt to ask the AI."),
-    ] = None,
+    ],
     context_lines: Annotated[
         int,
         typer.Option("--context", "-c", help="Number of shell history lines to send as context."),
@@ -504,30 +508,27 @@ def cli_main(
     safe_mode: Annotated[
         bool,
         typer.Option("--safe", help="Activates 'Safe Mode'.")
-    ] = False,
+    ] = False
+):
+    """
+    Ask the AI for a command-line suggestion.
+    This is the default functionality.
+    """
+    ask_ai(prompt, context_lines, safe_mode)
+
+
+@app.callback()
+def cli_main(
+    ctx: typer.Context,
     version: Annotated[
         Optional[bool],
         typer.Option("--version", callback=version_callback, is_eager=True, help="Show version and exit.")
     ] = None,
 ):
     """
-    AskIT-CLI: Your intelligent command-line assistant.
-    
-    By default, asks a question to the AI. Use specific commands for other actions.
+    Main Typer callback for handling global options like --version.
     """
-    # If a subcommand is being invoked, let it handle itself
-    if ctx.invoked_subcommand is not None:
-        return
-    
-    # If no prompt provided, this is an error since we're in the main flow
-    if prompt is None:
-        console.print("[bold red]Error:[/bold red] Prompt is required. Use -p or --prompt to specify your question.")
-        console.print("\nTry: [cyan]askit-cli -p 'your question here'[/cyan]")
-        console.print("Or:  [cyan]askit-cli --help[/cyan] for more information")
-        raise typer.Exit(1)
-    
-    # Call the ask functionality
-    ask_ai(prompt, context_lines, safe_mode)
+    pass
 
 
 if __name__ == "__main__":

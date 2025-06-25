@@ -45,8 +45,11 @@ jobs:
         run: poetry install
         shell: bash
       - name: Build with PyInstaller
-        run: poetry run pyinstaller src/askit/cli.py --paths src --name askit-cli --onefile --clean
+        run: poetry run pyinstaller run_cli.py --paths src --name askit-cli --onefile --clean
         shell: bash
+      - name: Post-build smoke test
+        run: .\dist\askit-cli.exe config --help
+        shell: pwsh
       - name: Prepare artifact
         run: |
           mkdir -p artifact
@@ -76,7 +79,7 @@ jobs:
         shell: bash
       - name: Build and package .deb
         run: |
-          poetry run pyinstaller src/askit/cli.py --paths src --name askit-cli --onefile --clean
+          poetry run pyinstaller run_cli.py --paths src --name askit-cli --onefile --clean
           VERSION=${{ github.ref_name }}
           DEBIAN_VERSION=${VERSION#v}
           mkdir -p staging/DEBIAN
@@ -90,6 +93,9 @@ jobs:
           Description: A command-line assistant that uses AI to provide suggestions for shell commands.
           EOF
           dpkg-deb --build staging askit-cli-${VERSION}-linux-amd64.deb
+        shell: bash
+      - name: Post-build smoke test
+        run: ./dist/askit-cli config --help
         shell: bash
       - uses: actions/upload-artifact@v4
         with:
@@ -115,7 +121,7 @@ jobs:
       - name: Build and package .pkg
         run: |
           # Build binary for Apple Silicon
-          poetry run pyinstaller src/askit/cli.py --paths src --name askit-cli --onefile --clean --target-arch arm64
+          poetry run pyinstaller run_cli.py --paths src --name askit-cli --onefile --clean --target-arch arm64
           
           # Create a staging directory for the PKG
           mkdir -p staging/usr/local/bin
@@ -131,6 +137,9 @@ jobs:
                    --identifier "io.github.askit-ai.askit-cli" \
                    --version "$PKG_VERSION" \
                    "askit-cli-${VERSION}-macos-arm64.pkg"
+        shell: bash
+      - name: Post-build smoke test
+        run: ./dist/askit-cli config --help
         shell: bash
       - uses: actions/upload-artifact@v4
         with:
