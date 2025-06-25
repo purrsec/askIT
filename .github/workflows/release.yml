@@ -11,6 +11,8 @@ jobs:
   build-and-release:
     name: Build and Release
     runs-on: ubuntu-latest # Le job principal pour créer la release tourne sur Linux
+    permissions:
+      contents: write
 
     steps:
       - name: Create Release
@@ -37,6 +39,8 @@ jobs:
     name: Build Binaries on ${{ matrix.os }}
     needs: build-and-release # Ce job dépend du premier
     runs-on: ${{ matrix.os }}
+    permissions:
+      contents: write
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest] # Les 3 OS cibles
