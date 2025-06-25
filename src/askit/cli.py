@@ -14,10 +14,7 @@ from .commands.config_cmd import config_shell
 from .core import project
 from .security import secrets_manager
 from .providers.claude import ClaudeProvider
-from dotenv import load_dotenv
 import platform
-
-load_dotenv()
 
 def show_help():
     """
@@ -61,11 +58,16 @@ def ask_ai(prompt: str, context_lines: int = 10, safe_mode: bool = False):
     """
     console = Console()
     
-    # Import config manager to ensure directories exist
+    # Import heavy dependencies only when needed
+    from dotenv import load_dotenv
+    from .providers.claude import ClaudeProvider
     from .core.config_manager import ensure_config_directories, migrate_old_config_if_needed, get_config_file
     from .core.history import get_shell_history, format_history_context
     import yaml
 
+    # Load environment variables only when needed
+    load_dotenv()
+    
     ensure_config_directories()
     migrate_old_config_if_needed()
 
@@ -155,6 +157,7 @@ def ask_ai(prompt: str, context_lines: int = 10, safe_mode: bool = False):
                 default="y"
             )
             if confirm.lower() == 'y':
+                from .agent.runtime import run_agent  # Import only when needed
                 asyncio.run(run_agent(prompt, explanation, provider))
             else:
                 console.print("[dim]Agent task cancelled.[/dim]")
