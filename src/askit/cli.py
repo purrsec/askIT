@@ -269,8 +269,16 @@ def main():
     args = sys.argv[1:]
     known_commands = {"init", "config", "info", "ask"}
 
-    # If no args, or the first arg is a known command or a help flag, let Typer handle it.
-    if not args or args[0] in known_commands or args[0].startswith('--'):
+    # If no args, or the first arg is a help flag, let Typer show help.
+    if not args or args == ["--help"]:
+        # To show help, we can't just call app() as it would error.
+        # Instead, we modify argv to include --help and let Typer handle it.
+        sys.argv = [sys.argv[0], "--help"]
+        app()
+        return
+
+    # If the first arg is a known command or a global option, let Typer handle it.
+    if args[0] in known_commands or args[0] in ["--version"]:
         app()
         return
 
