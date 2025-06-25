@@ -62,9 +62,11 @@ jobs:
 
       - name: Install dependencies
         run: poetry install
+        shell: bash
 
       - name: Build with PyInstaller
         run: poetry run pyinstaller src/askit/cli.py --name askit-cli --onefile --clean
+        shell: bash
 
       - name: Upload Release Asset
         uses: actions/upload-release-asset@v1
