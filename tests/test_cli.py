@@ -1,24 +1,33 @@
-import typer
-from typer.testing import CliRunner
+import sys
+from unittest.mock import patch
 
-from askit.cli import app
+import pytest
 
-runner = CliRunner()
+from askit import cli
 
-def test_app_shows_error_without_prompt():
-    """
-    Test that the CLI shows a custom error and exits with a non-zero code
-    when called with no command or prompt.
-    """
-    result = runner.invoke(app)
-    assert result.exit_code != 0
-    assert "Error: Prompt is required" in result.stdout
 
-def test_version_callback():
+def test_main_no_args_shows_help(capsys):
     """
-    Test that --version flag works correctly and exits cleanly.
+    Test that running with no arguments shows the help message, not an error.
     """
-    result = runner.invoke(app, ["--version"])
-    assert result.exit_code == 0
-    assert "askit-cli version" in result.stdout 
+    with patch.object(sys, 'argv', ['askit-cli']):
+        cli.main() # Test the actual entrypoint
+
+    captured = capsys.readouterr()
+    assert "Usage:" in captured.out
+    assert "Error:" not in captured.err
+
+
+def test_main_version_flag(capsys):
+    """
+    Test that --version flag works correctly and exits cleanly via the main entrypoint.
+    """
+    with patch.object(sys, 'argv', ['askit-cli', '--version']):
+        with pytest.raises(SystemExit) as e:
+            cli.main()
+        # Check that it exits cleanly
+        assert e.value.code == 0
+
+    captured = capsys.readouterr()
+    assert "askit-cli version" in captured.out 
     
