@@ -6,6 +6,8 @@ import sys
 import os
 from typing import Optional
 from rich.prompt import Prompt
+from rich.syntax import Syntax
+from typer import Exit as TyperExit
 from .agent.runtime import run_agent
 
 from ._version import __version__
@@ -288,39 +290,46 @@ def main(args: Optional[list[str]] = None):
     found, it calls the core `ask_ai` function directly. Otherwise, it
     defers to Typer to handle other commands like `init`, `config`, etc.
     """
-    # If no args are passed, use sys.argv. This makes it testable.
-    if args is None:
-        args = sys.argv[1:]
+    try:
+        # If no args are passed, use sys.argv. This makes it testable.
+        if args is None:
+            args = sys.argv[1:]
 
-    remaining_args, prompt_text = parse_and_join_prompt(args)
+        remaining_args, prompt_text = parse_and_join_prompt(args)
 
-    if prompt_text:
-        # A prompt was found. We'll manually parse other known options.
-        context_lines = 10
-        safe_mode = False
-
-        if "-c" in remaining_args:
-            try:
-                c_index = remaining_args.index("-c")
-                context_lines = int(remaining_args[c_index + 1])
-            except (ValueError, IndexError, TypeError):
-                pass  # Ignore if malformed
-        elif "--context" in remaining_args:
-            try:
-                c_index = remaining_args.index("--context")
-                context_lines = int(remaining_args[c_index + 1])
-            except (ValueError, IndexError, TypeError):
-                pass
-        
-        if "--safe" in remaining_args:
-            safe_mode = True
+        if prompt_text:
+            # A prompt was found. We'll manually parse other known options.
+            context_lines = 10
+            safe_mode = False
             
-        ask_ai(prompt=prompt_text, context_lines=context_lines, safe_mode=safe_mode)
-    else:
-        # No prompt found. Let Typer handle other commands like `init`, `config`, `info`,
-        # and global options like --help and --version.
-        app(args)
+            if "-c" in remaining_args:
+                c_index = remaining_args.index("-c")
+                if c_index + 1 < len(remaining_args):
+                    try:
+                        context_lines = int(remaining_args[c_index + 1])
+                        # Remove the flag and its value
+                        remaining_args = remaining_args[:c_index] + remaining_args[c_index+2:]
+                    except ValueError:
+                        pass # Keep default if value is not an integer
+            
+            if "--safe" in remaining_args:
+                safe_mode = True
+                remaining_args.remove("--safe")
 
+            # Call ask_ai directly, bypassing Typer for this specific case
+            ask_ai(prompt=prompt_text, context_lines=context_lines, safe_mode=safe_mode)
+        else:
+            # No prompt found, let Typer handle the command
+            app(remaining_args)
+    except TyperExit:
+        # This is a clean exit, typically from the user pressing Ctrl+C
+        # in a prompt. We exit gracefully without showing a traceback.
+        pass
+    except KeyboardInterrupt:
+        # This handles Ctrl+C at any other point in the app that isn't
+        # already caught and converted into a TyperExit.
+        console.print("\n[yellow]❌ Operation cancelled by user.[/yellow]")
+    
 
 app = typer.Typer(
     name="askit-cli",

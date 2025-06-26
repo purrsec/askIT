@@ -8,6 +8,12 @@ allowing the 'askit' package to be found.
 """
 import sys
 from askit.cli import main
+from typer import Exit as TyperExit
 
 if __name__ == '__main__':
-    main(sys.argv[1:]) 
+    try:
+        main(sys.argv[1:])
+    except TyperExit:
+        # This is a clean exit, typically from the user pressing Ctrl+C.
+        # We can exit gracefully without showing a traceback.
+        pass 
