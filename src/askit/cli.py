@@ -239,33 +239,88 @@ def ask_ai(prompt: str, context_lines: int = 10, safe_mode: bool = False):
 
 
 def parse_and_join_prompt(args: list[str]) -> tuple[list[str], str | None]:
-    """Finds -p or --prompt and joins the following words. Returns the remaining args and the prompt."""
+    """
+    Finds -p or --prompt, joins the subsequent words into a single string,
+    and returns the remaining arguments along with the extracted prompt.
+    """
     try:
         if "-p" in args:
             p_index = args.index("-p")
         elif "--prompt" in args:
             p_index = args.index("--prompt")
         else:
-            return args, None
+            return args, None  # No prompt flag found
     except ValueError:
+        # Should not happen if one of the flags is present, but good practice
         return args, None
 
-    prompt_words = args[p_index + 1:]
-    if not prompt_words:
-        # Let Typer handle the error of missing prompt value
-        return args, None
-        
-    prompt = " ".join(prompt_words)
+    # Get arguments before the flag
     remaining_args = args[:p_index]
+    
+    # Get words for the prompt
+    prompt_words = []
+    prompt_start_index = p_index + 1
+    
+    # Iterate from the word after the flag to the end of the arguments
+    for i in range(prompt_start_index, len(args)):
+        arg = args[i]
+        # Stop if we hit another option
+        if arg.startswith('-'):
+            # This and subsequent args are not part of the prompt
+            remaining_args.extend(args[i:])
+            break
+        prompt_words.append(arg)
+    
+    if not prompt_words:
+        # This happens if -p is at the end of the command
+        return remaining_args, None
+
+    prompt = " ".join(prompt_words)
     return remaining_args, prompt
 
 
 def main():
     """
     Main entry point for the CLI application.
-    This function creates and runs the Typer app.
+    
+    This function manually parses the prompt from sys.argv to allow for
+    free-form prompts (e.g., `askit -p list all files`). If a prompt is
+    found, it calls the core `ask_ai` function directly. Otherwise, it
+    defers to Typer to handle other commands like `init`, `config`, etc.
     """
-    app()
+    # We pass sys.argv[1:] to skip the script name
+    remaining_args, prompt_text = parse_and_join_prompt(sys.argv[1:])
+
+    if prompt_text:
+        # A prompt was found. We'll manually parse other known options.
+        context_lines = 10
+        safe_mode = False
+
+        if "-c" in remaining_args:
+            try:
+                c_index = remaining_args.index("-c")
+                context_lines = int(remaining_args[c_index + 1])
+            except (ValueError, IndexError):
+                pass  # Ignore if malformed
+        elif "--context" in remaining_args:
+            try:
+                c_index = remaining_args.index("--context")
+                context_lines = int(remaining_args[c_index + 1])
+            except (ValueError, IndexError):
+                pass
+        
+        if "--safe" in remaining_args:
+            safe_mode = True
+            
+        ask_ai(prompt=prompt_text, context_lines=context_lines, safe_mode=safe_mode)
+    else:
+        # No prompt found. Let Typer handle other commands or show help.
+        if '--help' in sys.argv or '-h' in sys.argv:
+            show_help()
+            raise typer.Exit()
+        
+        # If no prompt and no help, run the Typer app for commands.
+        app()
 
 
 app = typer.Typer(
@@ -455,7 +510,7 @@ def cli_main(
     ctx: typer.Context,
     prompt: Annotated[
         Optional[str],
-        typer.Option("--prompt", "-p", help="The user prompt to ask the AI."),
+        typer.Option("--prompt", "-p", help="The user prompt to ask the AI. All subsequent text is captured."),
     ] = None,
     context_lines: Annotated[
         int,
@@ -463,7 +518,7 @@ def cli_main(
     ] = 10,
     safe_mode: Annotated[
         bool,
-        typer.Option("--safe", help="Activates 'Safe Mode'.")
+        typer.Option("--safe", help="Activates 'Safe Mode', preventing automatic command execution."),
     ] = False,
     version: Annotated[
         Optional[bool],
@@ -471,14 +526,15 @@ def cli_main(
     ] = None,
 ):
     """
-    AskIT-CLI: Your intelligent command-line assistant.
+    AskIT: Your intelligent command-line assistant.
     """
-    if ctx.invoked_subcommand is None:
-        if prompt:
-            ask_ai(prompt, context_lines, safe_mode)
-        else:
-            # Show help if no command and no prompt is provided
-            console.print(ctx.get_help())
+    # The main "ask" logic is now handled in the `main` function.
+    # This callback now primarily handles cases where a subcommand is invoked
+    # or when no valid prompt is given, in which case we show help.
+    if ctx.invoked_subcommand is None and prompt is None:
+        # This condition is met when the user runs `askit-cli` with no args,
+        # or with options that our manual parser didn't handle (like just `-c 10`).
+        show_help()
 
 
 if __name__ == "__main__":
