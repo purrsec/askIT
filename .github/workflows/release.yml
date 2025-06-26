@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["${{ env.PYTHON_VERSION }}"]
+        python-version: ["3.12"]
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python
@@ -39,7 +39,7 @@ jobs:
       - name: Install latest Poetry
         uses: snok/install-poetry@v1
         with:
-          version: ${{ env.POETRY_VERSION }}
+          version: 1.8.2
       - name: Install dependencies
         run: poetry install
       - name: Run tests
@@ -53,7 +53,7 @@ jobs:
     runs-on: windows-latest
     strategy:
       matrix:
-        python-version: ["${{ env.PYTHON_VERSION }}"]
+        python-version: ["3.12"]
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python
@@ -73,7 +73,7 @@ jobs:
       - name: Install latest Poetry
         uses: snok/install-poetry@v1
         with:
-          version: ${{ env.POETRY_VERSION }}
+          version: 1.8.2
       - name: Install dependencies
         run: poetry install
         shell: pwsh
@@ -154,7 +154,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["${{ env.PYTHON_VERSION }}"]
+        python-version: ["3.12"]
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python
@@ -174,7 +174,7 @@ jobs:
       - name: Install latest Poetry
         uses: snok/install-poetry@v1
         with:
-          version: ${{ env.POETRY_VERSION }}
+          version: 1.8.2
       - name: Install dependencies
         run: |
           poetry install
@@ -217,7 +217,7 @@ jobs:
     runs-on: macos-latest
     strategy:
       matrix:
-        python-version: ["${{ env.PYTHON_VERSION }}"]
+        python-version: ["3.12"]
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python
@@ -237,7 +237,7 @@ jobs:
       - name: Install latest Poetry
         uses: snok/install-poetry@v1
         with:
-          version: ${{ env.POETRY_VERSION }}
+          version: 1.8.2
       - name: Install dependencies
         run: poetry install
         shell: bash
