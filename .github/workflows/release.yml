@@ -2,6 +2,10 @@
 
 name: Build, Test, and Release
 
+env:
+  PYTHON_VERSION: "3.12"
+  POETRY_VERSION: "1.8.2"
+
 on:
   push:
     branches:
@@ -15,19 +19,27 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.12"]
+        python-version: ["${{ env.PYTHON_VERSION }}"]
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-
+      - name: Cache Poetry virtualenv
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/pypoetry
+            ~/.cache/pip
+            .venv
+          key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-poetry-
       - name: Install latest Poetry
         uses: snok/install-poetry@v1
         with:
-          version: 1.8.2
-
+          version: ${{ env.POETRY_VERSION }}
       - name: Install dependencies
         run: poetry install
       - name: Run tests
@@ -41,25 +53,33 @@ jobs:
     runs-on: windows-latest
     strategy:
       matrix:
-        python-version: ["3.12"]
+        python-version: ["${{ env.PYTHON_VERSION }}"]
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-
+      - name: Cache Poetry virtualenv
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~\AppData\Local\pypoetry\Cache
+            ~\AppData\Local\pip\Cache
+            .venv
+          key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-poetry-
       - name: Install latest Poetry
         uses: snok/install-poetry@v1
         with:
-          version: 1.8.2
-
+          version: ${{ env.POETRY_VERSION }}
       - name: Install dependencies
         run: poetry install
-        shell: bash
+        shell: pwsh
       - name: Build with PyInstaller
         run: poetry run pyinstaller run_cli.py --paths src --name askit-cli --onedir --clean --exclude-module tkinter --exclude-module matplotlib --exclude-module numpy --exclude-module scipy --exclude-module PIL --exclude-module IPython
-        shell: bash
+        shell: pwsh
       - name: Post-build smoke test
         run: .\dist\askit-cli\askit-cli.exe config --help
         shell: pwsh
@@ -134,23 +154,30 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.12"]
+        python-version: ["${{ env.PYTHON_VERSION }}"]
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-
+      - name: Cache Poetry virtualenv
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/pypoetry
+            ~/.cache/pip
+            .venv
+          key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-poetry-
       - name: Install latest Poetry
         uses: snok/install-poetry@v1
         with:
-          version: 1.8.2
-
+          version: ${{ env.POETRY_VERSION }}
       - name: Install dependencies
         run: |
           poetry install
-
       - name: Build Linux binary
         run: |
           poetry run pyinstaller run_cli.py --paths src --name askit-cli --onedir --clean --exclude-module tkinter --exclude-module matplotlib --exclude-module numpy --exclude-module scipy --exclude-module PIL --exclude-module IPython
@@ -170,7 +197,7 @@ jobs:
           # Create a wrapper script that calls the actual binary
           cat <<EOF > staging/usr/local/bin/askit-cli
           #!/bin/bash
-          exec /usr/local/lib/askit-cli/askit-cli "\$@"
+          exec /usr/local/lib/askit-cli/askit-cli "$@"
           EOF
           chmod +x staging/usr/local/bin/askit-cli
           dpkg-deb --build staging askit-cli-${VERSION}-linux-amd64.deb
@@ -190,19 +217,27 @@ jobs:
     runs-on: macos-latest
     strategy:
       matrix:
-        python-version: ["3.12"]
+        python-version: ["${{ env.PYTHON_VERSION }}"]
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-
+      - name: Cache Poetry virtualenv
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/pypoetry
+            ~/.cache/pip
+            .venv
+          key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-poetry-
       - name: Install latest Poetry
         uses: snok/install-poetry@v1
         with:
-          version: 1.8.2
-
+          version: ${{ env.POETRY_VERSION }}
       - name: Install dependencies
         run: poetry install
         shell: bash
@@ -219,7 +254,7 @@ jobs:
           # Create a wrapper script that calls the actual binary
           cat <<EOF > staging/usr/local/bin/askit-cli
           #!/bin/bash
-          exec /usr/local/lib/askit-cli/askit-cli "\$@"
+          exec /usr/local/lib/askit-cli/askit-cli "$@"
           EOF
           chmod +x staging/usr/local/bin/askit-cli
 
