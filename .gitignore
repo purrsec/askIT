@@ -221,4 +221,3 @@ start.bat
 !.github/
 !.pre-commit-config.yaml
 !.editorconfig
-!.askit/config.yaml
