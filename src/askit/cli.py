@@ -279,7 +279,7 @@ def parse_and_join_prompt(args: list[str]) -> tuple[list[str], str | None]:
     return remaining_args, prompt
 
 
-def main():
+def main(args: Optional[list[str]] = None):
     """
     Main entry point for the CLI application.
     
@@ -288,8 +288,11 @@ def main():
     found, it calls the core `ask_ai` function directly. Otherwise, it
     defers to Typer to handle other commands like `init`, `config`, etc.
     """
-    # We pass sys.argv[1:] to skip the script name
-    remaining_args, prompt_text = parse_and_join_prompt(sys.argv[1:])
+    # If no args are passed, use sys.argv. This makes it testable.
+    if args is None:
+        args = sys.argv[1:]
+
+    remaining_args, prompt_text = parse_and_join_prompt(args)
 
     if prompt_text:
         # A prompt was found. We'll manually parse other known options.
@@ -300,13 +303,13 @@ def main():
             try:
                 c_index = remaining_args.index("-c")
                 context_lines = int(remaining_args[c_index + 1])
-            except (ValueError, IndexError):
+            except (ValueError, IndexError, TypeError):
                 pass  # Ignore if malformed
         elif "--context" in remaining_args:
             try:
                 c_index = remaining_args.index("--context")
                 context_lines = int(remaining_args[c_index + 1])
-            except (ValueError, IndexError):
+            except (ValueError, IndexError, TypeError):
                 pass
         
         if "--safe" in remaining_args:
@@ -314,13 +317,9 @@ def main():
             
         ask_ai(prompt=prompt_text, context_lines=context_lines, safe_mode=safe_mode)
     else:
-        # No prompt found. Let Typer handle other commands or show help.
-        if '--help' in sys.argv or '-h' in sys.argv:
-            show_help()
-            raise typer.Exit()
-        
-        # If no prompt and no help, run the Typer app for commands.
-        app()
+        # No prompt found. Let Typer handle other commands like `init`, `config`, `info`,
+        # and global options like --help and --version.
+        app(args)
 
 
 app = typer.Typer(
@@ -538,4 +537,4 @@ def cli_main(
 
 
 if __name__ == "__main__":
-    main() 
+    main(sys.argv[1:]) 
