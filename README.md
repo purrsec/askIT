@@ -93,13 +93,8 @@ Once initialized, AskIT automatically detects project types and infrastructure:
 
 ## 🔒 Privacy and Security
 
-### Data Collection
-- We collect minimal usage data to improve the service
-- No sensitive data or credentials are stored
-- All data is encrypted in transit and at rest
-
 ### API Key Security
-- Your Anthropic API key is stored securely using your system's keyring
+- Your Anthropic API key is stored securely using your system's keyring (for macOS click "always accept")
 - Keys are never transmitted except to Anthropic's official API endpoints
 
 ### Safe Mode
