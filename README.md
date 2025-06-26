@@ -2,7 +2,7 @@
 
 ![](https://img.shields.io/badge/Python-3.12%2B-brightgreen?style=flat-square) 
 ![](https://img.shields.io/github/v/release/purrsec/askIT?style=flat-square&cache=300)
-![](https://img.shields.io/github/license/purrsec/askIT?style=flat-square)
+![](https://img.shields.io/github/license/purrsec/askIT?style=flat-square&cache=300)
 
 🔧 **Claude-Code for SysAdmins, SecOps, and DevOps.** Ask questions in natural language and get instant shell commands with explanations. Like having Claude in your terminal.
 
