@@ -65,8 +65,62 @@ jobs:
         shell: pwsh
       - name: Prepare artifact
         run: |
+          $installScript = @'
+          [CmdletBinding(SupportsShouldProcess=$true)]
+          param(
+              [string]$InstallPath = "$env:LOCALAPPDATA\Programs"
+          )
+
+          $ErrorActionPreference = 'Stop'
+
+          $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Definition
+          $AppName = "askit-cli"
+          $SourceDir = Join-Path -Path $ScriptDir -ChildPath $AppName
+
+          if (-not (Test-Path -Path $SourceDir)) {
+              Write-Error "Source directory '$SourceDir' not found. Make sure 'askit-cli' directory is in the same folder as the install script."
+              exit 1
+          }
+
+          $InstallDir = Join-Path -Path $InstallPath -ChildPath $AppName
+
+          Write-Host "Installing $AppName to '$InstallDir'..."
+
+          if ($PSCmdlet.ShouldProcess($InstallDir, "Create Directory and Copy Files")) {
+              if (-not (Test-Path -Path $InstallDir)) {
+                  New-Item -ItemType Directory -Path (Split-Path $InstallDir) -Force | Out-Null
+                  New-Item -ItemType Directory -Path $InstallDir -Force | Out-Null
+              }
+              Copy-Item -Path "$SourceDir\*" -Destination $InstallDir -Recurse -Force
+          }
+
+          Write-Host "Adding '$InstallDir' to user's PATH."
+
+          if ($PSCmdlet.ShouldProcess("User's PATH", "Add '$InstallDir'")) {
+              try {
+                  $UserPath = [System.Environment]::GetEnvironmentVariable("Path", "User")
+                  $PathSeparator = [System.IO.Path]::PathSeparator
+                  $PathArray = $UserPath -split [regex]::Escape($PathSeparator)
+
+                  if ($PathArray -notcontains $InstallDir) {
+                      $NewPath = ($UserPath, $InstallDir) -join $PathSeparator
+                      [System.Environment]::SetEnvironmentVariable("Path", $NewPath, "User")
+                      Write-Host "Successfully added '$InstallDir' to user PATH. Please restart your terminal for changes to take effect."
+                  } else {
+                      Write-Host "'$InstallDir' is already in the user's PATH."
+                  }
+              } catch {
+                  Write-Error "Failed to modify PATH. Please add '$InstallDir' to your PATH manually."
+                  Write-Error $_
+                  exit 1
+              }
+          }
+          Write-Host "Installation complete."
+          '@
+          $installScript | Set-Content -Path "dist/install.ps1" -Encoding utf8
+          
           mkdir -p artifact
-          Compress-Archive -Path dist/askit-cli -DestinationPath "artifact/askit-cli-${{ github.ref_name }}-windows-x86_64.zip"
+          Compress-Archive -Path dist/* -DestinationPath "artifact/askit-cli-${{ github.ref_name }}-windows-x86_64.zip"
         shell: pwsh
       - uses: actions/upload-artifact@v4
         with:
