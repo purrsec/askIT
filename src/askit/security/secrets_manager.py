@@ -1,5 +1,13 @@
 import keyring
 import keyring.errors
+import platform
+
+if platform.system() == "Darwin":
+    try:
+        from keyring.backends import macOS
+        keyring.set_keyring(macOS.Keyring())
+    except ImportError:
+        pass
 
 SERVICE_NAME = "askit-cli"
 API_KEY_USERNAME = "api_key"
