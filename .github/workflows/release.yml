@@ -1,0 +1,318 @@
+# .github/workflows/release.yml
+
+name: Build, Test, and Release
+
+env:
+  PYTHON_VERSION: "3.12"
+  POETRY_VERSION: "1.8.2"
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Cache Poetry virtualenv
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/pypoetry
+            ~/.cache/pip
+            .venv
+          key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-poetry-
+      - name: Install latest Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: 1.8.2
+      - name: Install dependencies
+        run: poetry install
+      - name: Run tests
+        run: poetry run pytest
+        shell: bash
+
+  build-windows:
+    name: Build for Windows (x86_64)
+    needs: test
+    if: startsWith(github.ref, 'refs/tags/v') # Only run on tag pushes
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        python-version: ["3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Cache Poetry virtualenv
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~\AppData\Local\pypoetry\Cache
+            ~\AppData\Local\pip\Cache
+            .venv
+          key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-poetry-
+      - name: Install latest Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: 1.8.2
+      - name: Install dependencies
+        run: poetry install
+        shell: bash
+      - name: Build with PyInstaller
+        run: poetry run pyinstaller run_cli.py --paths src --name askit-cli --onedir --clean --exclude-module tkinter --exclude-module matplotlib --exclude-module numpy --exclude-module scipy --exclude-module PIL --exclude-module IPython
+        shell: bash
+      - name: Post-build smoke test
+        run: .\dist\askit-cli\askit-cli.exe config --help
+        shell: pwsh
+      - name: Prepare artifact
+        run: |
+          $installScript = @'
+          [CmdletBinding(SupportsShouldProcess=$true)]
+          param(
+              [string]$InstallPath = "$env:LOCALAPPDATA\Programs"
+          )
+
+          $ErrorActionPreference = 'Stop'
+
+          $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Definition
+          $AppName = "askit-cli"
+          $SourceDir = Join-Path -Path $ScriptDir -ChildPath $AppName
+
+          if (-not (Test-Path -Path $SourceDir)) {
+              Write-Error "Source directory '$SourceDir' not found. Make sure 'askit-cli' directory is in the same folder as the install script."
+              exit 1
+          }
+
+          $InstallDir = Join-Path -Path $InstallPath -ChildPath $AppName
+
+          Write-Host "Installing $AppName to '$InstallDir'..."
+
+          if ($PSCmdlet.ShouldProcess($InstallDir, "Create Directory and Copy Files")) {
+              if (-not (Test-Path -Path $InstallDir)) {
+                  New-Item -ItemType Directory -Path (Split-Path $InstallDir) -Force | Out-Null
+                  New-Item -ItemType Directory -Path $InstallDir -Force | Out-Null
+              }
+              Copy-Item -Path "$SourceDir\*" -Destination $InstallDir -Recurse -Force
+          }
+
+          Write-Host "Adding '$InstallDir' to user's PATH."
+
+          if ($PSCmdlet.ShouldProcess("User's PATH", "Add '$InstallDir'")) {
+              try {
+                  $UserPath = [System.Environment]::GetEnvironmentVariable("Path", "User")
+                  $PathSeparator = [System.IO.Path]::PathSeparator
+                  $PathArray = $UserPath -split [regex]::Escape($PathSeparator)
+
+                  if ($PathArray -notcontains $InstallDir) {
+                      $NewPath = ($UserPath, $InstallDir) -join $PathSeparator
+                      [System.Environment]::SetEnvironmentVariable("Path", $NewPath, "User")
+                      Write-Host "Successfully added '$InstallDir' to user PATH. Please restart your terminal for changes to take effect."
+                  } else {
+                      Write-Host "'$InstallDir' is already in the user's PATH."
+                  }
+              } catch {
+                  Write-Error "Failed to modify PATH. Please add '$InstallDir' to your PATH manually."
+                  Write-Error $_
+                  exit 1
+              }
+          }
+          Write-Host "Installation complete."
+          '@
+          $installScript | Set-Content -Path "dist/install.ps1" -Encoding utf8
+          
+          mkdir -p artifact
+          Compress-Archive -Path dist/* -DestinationPath "artifact/askit-cli-${{ github.ref_name }}-windows-x86_64.zip"
+        shell: pwsh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-build
+          path: artifact/
+
+  build-linux:
+    name: Build for Linux (amd64)
+    needs: test
+    if: startsWith(github.ref, 'refs/tags/v') # Only run on tag pushes
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Cache Poetry virtualenv
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/pypoetry
+            ~/.cache/pip
+            .venv
+          key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-poetry-
+      - name: Install latest Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: 1.8.2
+      - name: Install dependencies
+        run: |
+          poetry install
+      - name: Build Linux binary
+        run: |
+          poetry run pyinstaller run_cli.py --paths src --name askit-cli --onedir --clean --exclude-module tkinter --exclude-module matplotlib --exclude-module numpy --exclude-module scipy --exclude-module PIL --exclude-module IPython
+          VERSION=${{ github.ref_name }}
+          DEBIAN_VERSION=${VERSION#v}
+          mkdir -p staging/DEBIAN
+          mkdir -p staging/usr/local/bin
+          mkdir -p staging/usr/local/lib
+          cp -r dist/askit-cli staging/usr/local/lib/
+          cat <<EOF > staging/DEBIAN/control
+          Package: askit-cli
+          Version: $DEBIAN_VERSION
+          Architecture: amd64
+          Maintainer: git.lpl <git.lpl@protonmail.com>
+          Description: A command-line assistant that uses AI to provide suggestions for shell commands.
+          EOF
+          # Create a wrapper script that calls the actual binary
+          cat <<EOF > staging/usr/local/bin/askit-cli
+          #!/bin/bash
+          exec /usr/local/lib/askit-cli/askit-cli "$@"
+          EOF
+          chmod +x staging/usr/local/bin/askit-cli
+          dpkg-deb --build staging askit-cli-${VERSION}-linux-amd64.deb
+        shell: bash
+      - name: Post-build smoke test
+        run: ./dist/askit-cli/askit-cli config --help
+        shell: bash
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-build
+          path: askit-cli-${{ github.ref_name }}-linux-amd64.deb
+
+  build-macos:
+    name: Build for macOS (pkg)
+    needs: test
+    if: startsWith(github.ref, 'refs/tags/v') # Only run on tag pushes
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        python-version: ["3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Cache Poetry virtualenv
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/pypoetry
+            ~/.cache/pip
+            .venv
+          key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-poetry-
+      - name: Install latest Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: 1.8.2
+      - name: Install dependencies
+        run: poetry install
+        shell: bash
+      - name: Build macOS package
+        run: |
+          # Build binary for Apple Silicon with optimizations
+          poetry run pyinstaller run_cli.py --paths src --name askit-cli --onedir --clean --target-arch arm64 --exclude-module tkinter --exclude-module matplotlib --exclude-module numpy --exclude-module scipy --exclude-module PIL --exclude-module IPython
+          
+          # Create a staging directory for the PKG
+          mkdir -p staging/usr/local/bin
+          mkdir -p staging/usr/local/lib
+          cp -r dist/askit-cli staging/usr/local/lib/
+          
+          # Create a wrapper script that calls the actual binary
+          cat <<EOF > staging/usr/local/bin/askit-cli
+          #!/bin/bash
+          exec /usr/local/lib/askit-cli/askit-cli "$@"
+          EOF
+          chmod +x staging/usr/local/bin/askit-cli
+
+          # Set version variables
+          VERSION=${{ github.ref_name }}
+          PKG_VERSION=${VERSION#v}
+
+          # Create the .pkg installer
+          pkgbuild --root staging \
+                   --install-location "/" \
+                   --identifier "io.github.askit-ai.askit-cli" \
+                   --version "$PKG_VERSION" \
+                   "askit-cli-${VERSION}-macos-arm64.pkg"
+        shell: bash
+      - name: Post-build smoke test
+        run: ./dist/askit-cli/askit-cli config --help
+        shell: bash
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos-build
+          path: askit-cli-${{ github.ref_name }}-macos-arm64.pkg
+
+  release:
+    name: Create Final Release
+    needs: [build-windows, build-linux, build-macos]
+    if: startsWith(github.ref, 'refs/tags/v') # Only run on tag pushes
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download all build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      
+      - name: Check for downloaded files
+        id: check_files
+        run: |
+          if [ -d "artifacts" ] && [ -n "$(find artifacts -type f)" ]; then
+            echo "files_found=true" >> $GITHUB_OUTPUT
+            echo "Found files:"
+            find artifacts -type f
+          else
+            echo "files_found=false" >> $GITHUB_OUTPUT
+            echo "No build artifacts found to release."
+          fi
+
+      - name: Delete existing release (if files found)
+        if: steps.check_files.outputs.files_found == 'true'
+        run: gh release delete ${{ github.ref_name }} --yes || echo "No existing release to delete."
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create Release and Upload Assets (if files found)
+        if: steps.check_files.outputs.files_found == 'true'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: artifacts/**/*
+          generate_release_notes: true
+          draft: false
+          prerelease: false 

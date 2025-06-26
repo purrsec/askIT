@@ -1,0 +1,31 @@
+[tool.poetry]
+name = "askit-cli"
+version = "0.1.0"
+description = "An intelligent command-line assistant powered by AI."
+authors = ["git.lpl <git.lpl@protonmail.com>"]
+readme = "README.md"
+packages = [{include = "askit", from = "src"}]
+
+[tool.poetry.dependencies]
+python = ">=3.12, <3.14"
+typer = {extras = ["all"], version = "^0.16.0"}
+rich = "^13.7.1"
+pyyaml = "^6.0.1"
+anthropic = "^0.25.0"
+keyring = "^25.2.1"
+inquirer = "^3.2.3"
+watchdog = "^4.0.0"
+python-dotenv = "^1.1.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.2.0"
+ipython = "^8.24.0"
+pyinstaller = "^6.14.1"
+pytest-mock = "^3.12.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.scripts]
+askit-cli = "askit.cli:main" 
