@@ -76,10 +76,10 @@ jobs:
           version: 1.8.2
       - name: Install dependencies
         run: poetry install
-        shell: pwsh
+        shell: bash
       - name: Build with PyInstaller
         run: poetry run pyinstaller run_cli.py --paths src --name askit-cli --onedir --clean --exclude-module tkinter --exclude-module matplotlib --exclude-module numpy --exclude-module scipy --exclude-module PIL --exclude-module IPython
-        shell: pwsh
+        shell: bash
       - name: Post-build smoke test
         run: .\dist\askit-cli\askit-cli.exe config --help
         shell: pwsh
